@@ -1,20 +1,53 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img src="./public/logo.png" width="120" alt="Checkpoint ATS Logo" />
+  <h1 align="center">Checkpoint ATS</h1>
+  <p align="center">
+    An AI-powered resume analysis and optimization platform to bypass ATS filters and land more interviews.
+  </p>
 </div>
 
-# Run and deploy your AI Studio app
+<hr />
 
-This contains everything you need to run your app locally.
+## 🚀 Overview
 
-View your app in AI Studio: https://ai.studio/apps/cd6aa535-ada4-4114-aaa3-b63d3f9ea3f0
+Checkpoint ATS (Curator) analyzes your resume, identifies missing keywords, formatting errors, and provides editorial-grade feedback using Gemini to optimize your bullets for maximum impact.
 
-## Run Locally
+## 🛠️ Run Locally
 
-**Prerequisites:**  Node.js
+### Prerequisites
+- Node.js (v18+)
+- Python (3.10+)
 
-
+### Frontend Setup
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+2. Set up your environment variables by adding your `GEMINI_API_KEY` in `.env.local`.
+3. Start the Vite dev server:
+   ```bash
+   npm run dev
+   ```
+
+### Backend Setup
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Start the FastAPI server:
+   ```bash
+   python -m uvicorn main:app --reload --port 8000
+   ```
+
+## 🔗 Live Application
+View and deploy your app in AI Studio:
+👉 [AI Studio Dashboard](https://ai.studio/apps/cd6aa535-ada4-4114-aaa3-b63d3f9ea3f0)
