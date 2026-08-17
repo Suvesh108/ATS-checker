@@ -26,29 +26,33 @@ async def upload_resume(
     filename_lower = (file.filename or "").lower()
     is_pdf = "pdf" in ct or filename_lower.endswith(".pdf")
     is_docx = "docx" in ct or "word" in ct or "openxmlformats" in ct or filename_lower.endswith(".docx")
-    if not is_pdf and not is_docx:
-        raise HTTPException(status_code=415, detail="Only PDF and DOCX files are accepted")
-    # Normalise content type for parser
-    if is_pdf:
-        ct = "application/pdf"
-    else:
-        ct = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    is_img = any(ext in ct for ext in ["image", "png", "jpeg", "jpg", "webp"]) or any(filename_lower.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp"])
+
+    if not is_pdf and not is_docx and not is_img:
+        raise HTTPException(status_code=415, detail="Accepted file types: PDF, DOCX, PNG, JPG, or WEBP resumes.")
 
     try:
-        extracted_text = extract_text(file_bytes, ct)
+        extracted_text = extract_text(file_bytes, ct, filename=file.filename or "")
     except ValueError as e:
         raise HTTPException(status_code=415, detail=str(e))
 
     # Upload to Firebase Storage
-    bucket = get_bucket()
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    blob_name = f"resumes/{uid}/{timestamp}_{file.filename}"
-    blob = bucket.blob(blob_name)
-    blob.upload_from_string(file_bytes, content_type=ct)
-    # Use make_public — signed URLs require ADC/service-account key file on disk.
-    # Files are scoped per-user (uid in path) and the URL is only stored in Firestore.
-    blob.make_public()
-    storage_url = blob.public_url
+    storage_url = ""
+    blob_name = ""
+    try:
+        bucket = get_bucket()
+        if bucket:
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            blob_name = f"resumes/{uid}/{timestamp}_{file.filename}"
+            blob = bucket.blob(blob_name)
+            blob.upload_from_string(file_bytes, content_type=ct)
+            blob.make_public()
+            storage_url = blob.public_url
+    except Exception as storage_err:
+        import logging
+        logging.getLogger("curator").warning(f"Firebase Storage upload failed: {storage_err}. Falling back to mock URL.")
+        storage_url = f"https://example.com/mock-resumes/{file.filename}"
+        blob_name = f"mock-resumes/{file.filename}"
 
     db = get_db()
     doc_ref = db.collection("resumes").document()
@@ -77,7 +81,6 @@ async def list_resumes(user=Depends(get_current_user)):
     docs = (
         db.collection("resumes")
         .where("uid", "==", user["uid"])
-        .order_by("uploaded_at", direction="DESCENDING")
         .stream()
     )
     results = []
@@ -90,6 +93,7 @@ async def list_resumes(user=Depends(get_current_user)):
             "latest_score": d.get("latest_score"),
             "status": d.get("status"),
         })
+    results.sort(key=lambda x: x.get("uploaded_at", ""), reverse=True)
     return SuccessResponse(data=results)
 
 

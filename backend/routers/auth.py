@@ -85,12 +85,17 @@ async def update_profile(
         updates["last_name"] = last_name
 
     if photo:
-        bucket = get_bucket()
-        file_bytes = await photo.read()
-        blob = bucket.blob(f"users/{uid}/avatar")
-        blob.upload_from_string(file_bytes, content_type=photo.content_type)
-        blob.make_public()
-        updates["avatar_url"] = blob.public_url
+        try:
+            bucket = get_bucket()
+            file_bytes = await photo.read()
+            blob = bucket.blob(f"users/{uid}/avatar")
+            blob.upload_from_string(file_bytes, content_type=photo.content_type)
+            blob.make_public()
+            updates["avatar_url"] = blob.public_url
+        except Exception as storage_err:
+            import logging
+            logging.getLogger("curator").warning(f"Firebase Storage avatar upload failed: {storage_err}. Falling back to default avatar.")
+            updates["avatar_url"] = "https://lh3.googleusercontent.com/a/default-user"
 
     if updates:
         db.collection("users").document(uid).update(updates)

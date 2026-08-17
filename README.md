@@ -18,7 +18,13 @@ Checkpoint ATS (Curator) analyzes your resume, identifies missing keywords, form
 - Node.js (v18+)
 - Python (3.10+)
 
-### Frontend Setup
+### Quick Start (Both Frontend & Backend)
+Run both the Vite frontend (port 3000) and the FastAPI backend (port 8000) with a single command:
+```bash
+npm run dev:all
+```
+
+### Frontend Only
 1. Install dependencies:
    ```bash
    npm install
@@ -48,6 +54,25 @@ Checkpoint ATS (Curator) analyzes your resume, identifies missing keywords, form
    python -m uvicorn main:app --reload --port 8000
    ```
 
+## 🌐 Deployment (Vercel & Netlify)
+
+### Deploy to Vercel (Frontend + Serverless Python API)
+This project is configured out-of-the-box for Vercel with [`vercel.json`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/vercel.json) and [`api/index.py`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/api/index.py).
+1. Connect your repository to [Vercel](https://vercel.com).
+2. Framework Preset: **Vite** (Root Directory: `./`).
+3. Vercel automatically detects the frontend and serverless Python API routes (`/api/*`).
+4. (Optional) Set environment variables like `VITE_API_URL` if hosting backend separately.
+
+### Deploy to Netlify
+Configured with [`netlify.toml`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/netlify.toml) and [`public/_redirects`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/public/_redirects):
+1. Connect your repository to [Netlify](https://www.netlify.com).
+2. Build Command: `npm run build`
+3. Publish Directory: `dist`
+4. Set `VITE_API_URL` in Netlify Environment Variables pointing to your backend URL (or Vercel / Render backend).
+
+---
+
 ## 🔗 Live Application
-View and deploy your app in AI Studio:
-👉 [AI Studio Dashboard](https://ai.studio/apps/cd6aa535-ada4-4114-aaa3-b63d3f9ea3f0)
+View and test your application:
+👉 [GitHub Repository](https://github.com/)
+

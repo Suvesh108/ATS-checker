@@ -1,6 +1,6 @@
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
-export type Screen = 'landing' | 'dashboard' | 'optimizer' | 'report' | 'matches' | 'settings';
+export type Screen = 'landing' | 'dashboard' | 'optimizer' | 'report' | 'matches' | 'applied' | 'settings';
 
 export interface Resume {
   id: string;
@@ -32,6 +32,7 @@ export interface ActionItem {
 }
 
 export interface JobMatch {
+  id?: string;
   job_title: string;
   company_name: string;
   location: string;
@@ -41,6 +42,16 @@ export interface JobMatch {
   salary_max: number;
   posted_ago: string;
   missing_skills: string[];
+  platform?: string;
+  platform_id?: string;
+  job_url?: string;
+}
+
+export interface AppliedJob extends JobMatch {
+  id: string;
+  status: 'Applied' | 'Interviewing' | 'Offer' | 'Rejected' | 'Saved';
+  applied_at: string;
+  notes?: string;
 }
 
 export interface UserProfile {
@@ -57,3 +68,13 @@ export interface UserProfile {
     job_matches_count: number;
   };
 }
+
+export type AIProvider = 'gemini' | 'anthropic' | 'openai' | 'xai' | 'groq' | 'deepseek' | 'openrouter';
+
+export interface AIConfig {
+  provider: 'auto' | AIProvider;
+  model?: string;
+  keys: Partial<Record<AIProvider, string>>;
+  providerModels?: Partial<Record<AIProvider, string>>;
+}
+

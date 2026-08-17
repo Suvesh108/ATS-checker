@@ -3,9 +3,10 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from config import FRONTEND_ORIGIN
 from services.firebase_service import init_firebase
-from routers import auth, resumes, analysis, optimizer, jobs
+from routers import auth, resumes, analysis, optimizer, jobs, ai, applied_jobs
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -42,6 +43,11 @@ async def log_requests(request: Request, call_next):
 # ── Global Exception Handler ──────────────────────────────────────────────────
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    if isinstance(exc, StarletteHTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"success": False, "error": exc.detail},
+        )
     logger.error(f"Unhandled error: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
@@ -54,6 +60,8 @@ app.include_router(resumes.router)
 app.include_router(analysis.router)
 app.include_router(optimizer.router)
 app.include_router(jobs.router)
+app.include_router(ai.router)
+app.include_router(applied_jobs.router)
 
 
 @app.get("/health")

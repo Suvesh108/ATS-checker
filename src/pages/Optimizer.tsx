@@ -18,11 +18,23 @@ export default function Optimizer() {
   const resumeId = localStorage.getItem('selected_resume_id');
 
   useEffect(() => {
-    if (!resumeId) { setLoading(false); return; }
+    if (!resumeId || resumeId === 'null' || resumeId === 'undefined') { 
+      setItems([]);
+      setLoading(false); 
+      return; 
+    }
 
+    setLoading(true);
     fetch(`${API_BASE}/optimizer/action-items/${resumeId}`, { headers: getAuthHeaders() })
       .then(r => r.json())
-      .then(res => { if (res.success) setItems(res.data); })
+      .then(res => { 
+        if (res.success && Array.isArray(res.data)) {
+          setItems(res.data);
+        } else {
+          setItems([]);
+        }
+      })
+      .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [resumeId]);
 
@@ -55,10 +67,14 @@ export default function Optimizer() {
         headers: getJsonHeaders(),
         body: JSON.stringify({ bullet_text: bullet }),
       }).then(r => r.json());
-      if (res.success) setRewritten(res.data.rewritten);
-      else alert(res.detail || 'Rewrite failed. Please try again.');
-    } catch {
-      alert('Could not reach the server. Is the backend running?');
+      if (res.success) {
+        setRewritten(res.data.rewritten);
+        window.showToast('Bullet optimized successfully!', 'success');
+      } else {
+        window.showToast(res.detail || 'Rewrite failed. Please try again.', 'error');
+      }
+    } catch (auto_err) {
+      window.showToast('Could not reach the server. Is the backend running?', 'error');
     } finally {
       setRewriting(false);
     }
@@ -71,7 +87,7 @@ export default function Optimizer() {
   };
 
   return (
-    <div className="ml-64 p-12 bg-surface min-h-screen">
+    <div className="p-6 md:p-12 bg-surface min-h-screen">
       <div className="max-w-6xl mx-auto space-y-10">
 
         {/* Header */}
@@ -94,7 +110,7 @@ export default function Optimizer() {
                 </h3>
                 {items.length > 0 && (
                   <span className="text-xs font-bold text-secondary bg-secondary/10 px-3 py-1 rounded-full">
-                    {items.filter(i => i.completed).length}/{items.length} done
+                    {items.filter(i => i?.completed).length}/{items.length} done
                   </span>
                 )}
               </div>
@@ -111,25 +127,25 @@ export default function Optimizer() {
                 <div className="space-y-4">
                   {items.map((item) => (
                     <div
-                      key={item.id}
-                      onClick={() => toggleItem(item.id, item.completed)}
+                      key={item?.id || Math.random().toString()}
+                      onClick={() => toggleItem(item?.id, item?.completed ?? false)}
                       className={`flex items-center gap-5 p-5 bg-slate-50 rounded-xl border-l-4 cursor-pointer ${
-                        item.priority === 'critical' ? 'border-tertiary' : 'border-primary'
-                      } ${item.completed ? 'opacity-60' : 'hover:bg-slate-100'} transition-all`}
+                        item?.priority === 'critical' ? 'border-tertiary' : 'border-primary'
+                      } ${(item?.completed ?? false) ? 'opacity-60' : 'hover:bg-slate-100'} transition-all`}
                     >
                       <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 transition-all ${
-                        item.completed ? 'bg-secondary' : 'border-2 border-slate-300'
+                        (item?.completed ?? false) ? 'bg-secondary' : 'border-2 border-slate-300'
                       }`}>
-                        {item.completed && <Check size={14} className="text-white" />}
+                        {(item?.completed ?? false) && <Check size={14} className="text-white" />}
                       </div>
                       <div className="flex-grow">
-                        <p className={`font-bold text-primary ${item.completed ? 'line-through opacity-50' : ''}`}>
-                          {item.title}
+                        <p className={`font-bold text-primary ${(item?.completed ?? false) ? 'line-through opacity-50' : ''}`}>
+                          {item?.title || ''}
                         </p>
-                        <p className="text-sm text-slate-500">{item.description}</p>
+                        <p className="text-sm text-slate-500">{item?.description || ''}</p>
                       </div>
                       <span className="px-3 py-1 bg-slate-200 text-primary text-[10px] font-bold rounded-full shrink-0">
-                        +{item.points} PTS
+                        +{item?.points ?? 0} PTS
                       </span>
                     </div>
                   ))}
@@ -147,7 +163,7 @@ export default function Optimizer() {
                 </div>
                 <div>
                   <h3 className="font-bold font-headline text-primary">AI Bullet Rewriter</h3>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by Gemini</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Multi-Model AI Engine</p>
                 </div>
               </div>
 
