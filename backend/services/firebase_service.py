@@ -2,8 +2,11 @@ import os
 import json
 import uuid
 
-# File-based local database path
-DB_FILE = os.path.join(os.path.dirname(__file__), "..", "local_db.json")
+# File-based local database path (uses /tmp on Vercel / serverless functions)
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    DB_FILE = "/tmp/local_db.json"
+else:
+    DB_FILE = os.path.join(os.path.dirname(__file__), "..", "local_db.json")
 
 def load_db() -> dict:
     if not os.path.exists(DB_FILE):
