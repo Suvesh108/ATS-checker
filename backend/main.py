@@ -73,6 +73,16 @@ app.include_router(ai.router)
 app.include_router(applied_jobs.router)
 
 
+@app.get("/")
+async def root():
+    return {
+        "status": "ok",
+        "service": "Curator ATS API",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "Curator ATS API"}
