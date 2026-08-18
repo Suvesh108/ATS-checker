@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Screen, AIConfig } from '../../types';
 import { API_BASE, getAuthHeaders, getAIConfig, uploadResume } from '../../lib/api';
+import { Logo } from '../ui/Logo';
 
 interface NavbarProps {
   currentScreen: Screen;
@@ -116,15 +117,9 @@ export const Navbar = ({ currentScreen, setScreen, onHome }: NavbarProps) => {
           <div className="flex items-center gap-6">
             <button
               onClick={() => setScreen('dashboard')}
-              className="flex items-center gap-2 group text-left"
+              className="flex items-center gap-2 group text-left transition-opacity hover:opacity-90 cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-xl primary-gradient flex items-center justify-center shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-                <span className="text-white font-black text-base font-headline">C</span>
-              </div>
-              <div>
-                <span className="text-lg font-extrabold font-headline tracking-tight text-primary">Curator</span>
-                <span className="hidden sm:inline-block ml-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">ATS</span>
-              </div>
+              <Logo size={34} showText />
             </button>
 
             {/* Desktop Navigation Tabs */}

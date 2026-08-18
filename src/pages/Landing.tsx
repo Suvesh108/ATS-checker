@@ -1,6 +1,6 @@
 import { Verified, Upload, ClipboardList, SearchCode, Zap, Smile, Github, Code2, Sparkles } from 'lucide-react';
 import { Screen } from '../types';
-import logo from '../assets/logo.png';
+import { Logo } from '../components/ui/Logo';
 
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ export default function Landing({ onStart }: LandingProps) {
       <nav className="bg-white/80 backdrop-blur-md shadow-sm fixed top-0 z-50 w-full">
         <div className="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-extrabold text-primary font-headline">Checkpoint ATS</span>
+            <Logo size={36} showText />
             <span className="hidden sm:inline-block px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-full border border-emerald-100">
               100% Free
             </span>
@@ -271,7 +271,8 @@ export default function Landing({ onStart }: LandingProps) {
       {/* Footer */}
       <footer className="w-full py-12 border-t border-slate-100 bg-white">
         <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="flex flex-wrap justify-center gap-8 mb-4">
+          <Logo size={28} showText />
+          <div className="flex flex-wrap justify-center gap-8 my-2">
             {footerLinks.map(link => (
               <a
                 key={link.label}
