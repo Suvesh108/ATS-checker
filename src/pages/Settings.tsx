@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles, Zap, Eye, EyeOff, CheckCircle2, XCircle,
   ExternalLink, RefreshCw, Search, Briefcase, TrendingUp,
-  Bell, AlertCircle, Cpu,
+  Bell, AlertCircle, Cpu, Server, Globe,
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { API_BASE, getAuthHeaders, getAIConfig, saveAIConfig, testAIKey, fetchProviderModels } from '../lib/api';
@@ -226,6 +226,41 @@ export default function Settings() {
   const [fetchingModels, setFetchingModels] = useState<Record<string, boolean>>({});
   const [customModelInputs, setCustomModelInputs] = useState<Record<string, string>>({});
   const [showCustomInput, setShowCustomInput] = useState<Record<string, boolean>>({});
+  const [customServerUrl, setCustomServerUrl] = useState(localStorage.getItem('ats_backend_url') || '');
+  const [serverStatus, setServerStatus] = useState<'idle' | 'checking' | 'online' | 'offline'>('idle');
+  const [serverPingMsg, setServerPingMsg] = useState('');
+
+  const checkServerStatus = async (overrideUrl?: string) => {
+    setServerStatus('checking');
+    const targetUrl = overrideUrl !== undefined ? overrideUrl : (customServerUrl.trim() || API_BASE);
+    const base = targetUrl.replace(/\/api$/, '').replace(/\/+$/, '');
+    try {
+      const res = await fetch(`${base}/health`, { method: 'GET' });
+      const data = await res.json();
+      if (res.ok && data?.status === 'ok') {
+        setServerStatus('online');
+        setServerPingMsg(`Online: ${data.service || 'Curator ATS API'}`);
+      } else {
+        setServerStatus('offline');
+        setServerPingMsg('Received non-OK response from server.');
+      }
+    } catch (err: any) {
+      setServerStatus('offline');
+      setServerPingMsg(err?.message || 'Cannot reach backend server.');
+    }
+  };
+
+  const handleSaveBackendUrl = () => {
+    const trimmed = customServerUrl.trim();
+    if (trimmed) {
+      localStorage.setItem('ats_backend_url', trimmed);
+      window.showToast?.('Backend URL saved. Re-checking connection...', 'success');
+    } else {
+      localStorage.removeItem('ats_backend_url');
+      window.showToast?.('Reset to default backend routing.', 'success');
+    }
+    checkServerStatus(trimmed);
+  };
 
   useEffect(() => {
     fetch(`${API_BASE}/auth/me`, { headers: getAuthHeaders() })
@@ -240,6 +275,7 @@ export default function Settings() {
       .catch(() => {})
       .finally(() => setLoading(false));
     setAiConfig(getAIConfig());
+    checkServerStatus();
   }, []);
 
   const persistAI = (next: AIConfig) => {
@@ -608,6 +644,74 @@ export default function Settings() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        {/* ─── Backend Server Connection ─── */}
+        <section className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
+                  <Server size={20} />
+                </div>
+                <h3 className="text-2xl font-headline font-extrabold text-primary tracking-tight">Backend Server Connection</h3>
+              </div>
+              <p className="text-slate-500 text-sm mt-1">
+                Connected to your Render Python backend API for resume parsing, ATS scoring & job matches.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                serverStatus === 'online'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : serverStatus === 'checking'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : serverStatus === 'offline'
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  serverStatus === 'online' ? 'bg-emerald-500 animate-pulse' : serverStatus === 'checking' ? 'bg-amber-500 animate-ping' : 'bg-red-500'
+                }`} />
+                {serverStatus === 'online' ? 'Backend Live' : serverStatus === 'checking' ? 'Checking…' : serverStatus === 'offline' ? 'Offline' : 'Unchecked'}
+              </span>
+              <button
+                type="button"
+                onClick={() => checkServerStatus()}
+                disabled={serverStatus === 'checking'}
+                className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-primary hover:bg-slate-50 transition-all text-xs font-bold flex items-center gap-1 shadow-sm cursor-pointer"
+                title="Ping Server Health"
+              >
+                <RefreshCw size={14} className={serverStatus === 'checking' ? 'animate-spin' : ''} />
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Globe size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="url"
+                  placeholder="https://curator-ats-backend.onrender.com (or leave blank for auto)"
+                  value={customServerUrl}
+                  onChange={e => setCustomServerUrl(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-primary placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveBackendUrl}
+                className="px-6 py-3 rounded-xl bg-primary text-white font-headline font-bold text-xs shadow-md hover:bg-primary/90 transition-all shrink-0 cursor-pointer"
+              >
+                Save Backend URL
+              </button>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400 px-1">
+              <span>Active Endpoint: <strong className="font-mono text-slate-600">{API_BASE}</strong></span>
+              {serverPingMsg && <span className="text-slate-500 font-medium">{serverPingMsg}</span>}
+            </div>
           </div>
         </section>
 

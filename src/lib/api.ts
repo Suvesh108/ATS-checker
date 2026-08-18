@@ -5,19 +5,26 @@ import { AIConfig, AIProvider } from '../types';
 export const API_BASE = (() => {
   if (typeof window === 'undefined') return 'http://localhost:8000/api';
 
-  // 1. Explicit Render backend URL from Vercel environment variables (VITE_API_URL)
+  // 1. Explicit Render backend URL from Vercel build environment (VITE_API_URL)
   const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
   if (envUrl) {
     const cleaned = envUrl.replace(/\/+$/, '');
     return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
   }
 
-  // 2. Production Vercel deployment without custom env (relative /api route)
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '0.0.0.0';
-  if (!isLocal) return '/api';
+  // 2. Custom backend URL saved in browser storage
+  const savedUrl = localStorage.getItem('ats_backend_url')?.trim();
+  if (savedUrl) {
+    const cleaned = savedUrl.replace(/\/+$/, '');
+    return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
+  }
 
   // 3. Local development default
-  return 'http://localhost:8000/api';
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '0.0.0.0';
+  if (isLocal) return 'http://localhost:8000/api';
+
+  // 4. Production fallback relative route
+  return '/api';
 })();
 
 const AI_CONFIG_KEY = 'ats_ai_config';
