@@ -2,21 +2,12 @@ import json
 import re
 import asyncio
 import logging
-from google import genai
-from google.genai import types
+import httpx
 from config import GEMINI_API_KEY
 from fastapi import HTTPException
 
 # Configure Logger
 logger = logging.getLogger("curator")
-
-# Initialize client only if key is set
-_client = None
-if GEMINI_API_KEY:
-    try:
-        _client = genai.Client(api_key=GEMINI_API_KEY)
-    except Exception as e:
-        logger.error(f"Failed to initialize Gemini Client: {e}")
 
 MODEL = "gemini-2.0-flash"
 MAX_RETRIES = 1
@@ -114,18 +105,31 @@ MOCK_JOBS = [
 # ─── API Call Helper ─────────────────────────────────────────────────────────
 
 async def _call_gemini(prompt: str) -> str:
-    if not _client:
-        raise Exception("Gemini Client not initialized. Check your API key.")
+    if not GEMINI_API_KEY:
+        raise Exception("Gemini API key not configured. Check your environment.")
+    
+    clean_key = GEMINI_API_KEY.strip().replace("\r", "").replace("\n", "").replace('"', '').replace("'", "")
+    clean_model = MODEL.replace("models/", "")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={clean_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
     
     last_error = None
     for attempt in range(MAX_RETRIES + 1):
         try:
-            response = await asyncio.to_thread(
-                _client.models.generate_content,
-                model=MODEL,
-                contents=prompt,
-            )
-            return response.text
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                res = await client.post(url, headers=headers, json=payload)
+                if res.status_code != 200:
+                    raise Exception(f"Gemini API Error ({res.status_code}): {res.text}")
+                data = res.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        return parts[0].get("text", "")
+                return ""
         except Exception as e:
             last_error = e
             if attempt < MAX_RETRIES:

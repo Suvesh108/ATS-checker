@@ -4,8 +4,6 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional, List, Tuple
 import httpx
-from google import genai
-from google.genai import types
 
 logger = logging.getLogger("curator")
 
@@ -233,13 +231,42 @@ MOCK_JOBS = [
 # ─── Provider Call Implementations ───────────────────────────────────────────
 
 async def _call_gemini_api(api_key: str, model: str, prompt: str) -> str:
-    client = genai.Client(api_key=api_key)
-    response = await asyncio.to_thread(
-        client.models.generate_content,
-        model=model or "gemini-2.0-flash",
-        contents=prompt,
-    )
-    return response.text
+    clean_key = api_key.strip().replace("\r", "").replace("\n", "").replace('"', '').replace("'", "")
+    clean_model = model.replace("models/", "") if model else "gemini-2.0-flash"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={clean_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [
+            {
+                "parts": [{"text": prompt}]
+            }
+        ]
+    }
+    async with httpx.AsyncClient(timeout=45.0) as client:
+        res = await client.post(url, headers=headers, json=payload)
+        if res.status_code != 200:
+            error_detail = res.text
+            is_auth_error = res.status_code in (401, 403)
+            try:
+                err_json = res.json()
+                if "error" in err_json:
+                    err_obj = err_json["error"]
+                    error_detail = err_obj.get("message") or str(err_obj)
+                    if "API_KEY_INVALID" in error_detail or "UNAUTHENTICATED" in str(err_obj) or res.status_code in (401, 403):
+                        is_auth_error = True
+            except Exception:
+                pass
+            if is_auth_error:
+                raise ValueError(f"AUTH_ERROR: {error_detail}")
+            raise Exception(f"Gemini API Error ({res.status_code}): {error_detail}")
+        
+        data = res.json()
+        candidates = data.get("candidates", [])
+        if candidates:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            if parts:
+                return parts[0].get("text", "")
+        return ""
 
 
 async def _call_anthropic_api(api_key: str, model: str, prompt: str) -> str:
