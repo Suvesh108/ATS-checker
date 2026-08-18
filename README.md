@@ -54,25 +54,31 @@ npm run dev:all
    python -m uvicorn main:app --reload --port 8000
    ```
 
-## 🌐 Deployment (Vercel & Netlify)
+## 🌐 Production Deployment (Vercel Frontend + Render Backend)
 
-### Deploy to Vercel (Frontend + Serverless Python API)
-This project is configured out-of-the-box for Vercel with [`vercel.json`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/vercel.json) and [`api/index.py`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/api/index.py).
-1. Connect your repository to [Vercel](https://vercel.com).
-2. Framework Preset: **Vite** (Root Directory: `./`).
-3. Vercel automatically detects the frontend and serverless Python API routes (`/api/*`).
-4. (Optional) Set environment variables like `VITE_API_URL` if hosting backend separately.
-
-### Deploy to Netlify
-Configured with [`netlify.toml`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/netlify.toml) and [`public/_redirects`](file:///c:/Users/Suvesh/Desktop/projects/ATS%20Checker/public/_redirects):
-1. Connect your repository to [Netlify](https://www.netlify.com).
-2. Build Command: `npm run build`
-3. Publish Directory: `dist`
-4. Set `VITE_API_URL` in Netlify Environment Variables pointing to your backend URL (or Vercel / Render backend).
+### Step 1: Deploy Backend to Render (Free Web Service)
+1. Go to [dashboard.render.com](https://dashboard.render.com/) and click **New +** → **Web Service** (or **Blueprint** using `render.yaml`).
+2. Connect your GitHub repository: `Suvesh108/ATS-checker`.
+3. Configure the settings:
+   - **Root Directory**: `backend` (or leave empty if using root `render.yaml`)
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. In **Environment Variables**, add:
+   - `FRONTEND_ORIGIN`: `https://*.vercel.app` (or your Vercel frontend URL)
+5. Click **Create Web Service**. Copy your live backend URL (e.g. `https://curator-ats-backend.onrender.com`).
 
 ---
 
-## 🔗 Live Application
-View and test your application:
-👉 [GitHub Repository](https://github.com/)
+### Step 2: Deploy Frontend to Vercel (Fast Vite CDN)
+1. Go to [vercel.com/new](https://vercel.com/new) and import your repository: `Suvesh108/ATS-checker`.
+2. **Framework Preset**: Select **Vite** (Root Directory: `./`).
+3. In **Environment Variables**, add:
+   - **`VITE_API_URL`**: Your Render backend URL (e.g., `https://curator-ats-backend.onrender.com/api` or `https://curator-ats-backend.onrender.com`).
+4. Click **Deploy**.
+
+---
+
+## 🔗 Repository
+👉 [GitHub Repository](https://github.com/Suvesh108/ATS-checker)
 
